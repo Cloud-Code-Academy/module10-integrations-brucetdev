@@ -6,7 +6,7 @@
 public with sharing class DummyJSONCalloutTest {
 	// This test method will test the getDummyJSONUserFromId future method with a mock HTTP response.
 	@IsTest
-	static void testGetDummyJSONUserFromId() {
+	static void testGetDummyJSONUserFromId() { // this test has been completed!
 		// Create contact
 		Contact cont = new Contact(FirstName = 'Test', LastName = 'User', DummyJSON_Id__c = '1');
 		insert cont;
@@ -55,6 +55,9 @@ public with sharing class DummyJSONCalloutTest {
 			'MailingCountry does not match your value: ' + cont.MailingCountry
 		);
 	}
+//}
+
+// comment out the rest of the test class to see if that allows me to run the first test successfully
 
 	@isTest
 	static void testPostCreateDummyJSONUser() {

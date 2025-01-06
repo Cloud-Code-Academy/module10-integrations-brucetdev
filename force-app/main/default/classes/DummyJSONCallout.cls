@@ -24,7 +24,7 @@
 public with sharing class DummyJSONCallout {
 
 	/* 
-	 * Question 1
+	 * Question 1 - test passed
      * Fetches user information from an external system https://dummyjson.com/user/{id} ('DummyJsonUser') based on the provided dummy user ID. 
      * If the callout is successful and returns an HTTP status of 200, the method will update a contact based on the DummyJSON_Id__c with the data returned from the external system.
 	 * Use the createContactFromJson method to parse the JSON response and create a Salesforce Contact object.
@@ -71,10 +71,6 @@ public with sharing class DummyJSONCallout {
 			cont.Birthdate = Date.valueOf((String) parsedResponse.get('birthDate'));
 			System.debug('the cont  birthdate is:	' + cont.Birthdate);
 
-			
-//14:56:07.4 (260861720)|USER_DEBUG|[60]|DEBUG|The key is: address
-//14:56:07.4 (260991750)|USER_DEBUG|[61]|DEBUG|The value is: {address=123 Test St, city=Test City, country=Testland, postalCode=12345, state=TS}
-
 			// Cast the values in the 'address' key of the parsedResponse Map to a Map of String and Object
 			Map<String, Object> parsedFullAddress = (Map<String, Object>) parsedResponse.get('address');
 			//print out the value of the 'address' key of the parsedResponse Map
@@ -110,10 +106,10 @@ public with sharing class DummyJSONCallout {
 	}
 
 }
-	}
+	
 
-	/* 
-	 * Question 2
+		/* 
+	 * Question 2 - test passed
      * Transforms a JSON response from the external system https://dummyjson.com/users into a Salesforce Contact object.
      * The method parses the JSON string to extract user details and map them to a Salesforce Contact object.
      * The contact fields populated from the JSON include Email, Phone, Birthdate, and various address-related fields.
@@ -124,77 +120,128 @@ public with sharing class DummyJSONCallout {
 	 * 
      * Documentation: https://dummyjson.com/docs/users
      * 
-//      * @param String jsonResponse The JSON string from the external system that contains user details.
-//      * @return Contact The Salesforce Contact object populated with details from the JSON string.
-//      */
-// 	@TestVisible // Allows test class to see this method. Since it is private, it would not be visible otherwise.
-// 	private static Contact createContactFromJson(String jsonResponse) {
-// 		// Deserialize the JSON string into map of primitive data types.
+     * @param String jsonResponse The JSON string from the external system that contains user details.
+     * @return Contact The Salesforce Contact object populated with details from the JSON string.
+     */
+	@TestVisible // Allows test class to see this method. Since it is private, it would not be visible otherwise.
+	private static Contact createContactFromJson(String jsonResponse) {
+		// Deserialize the JSON string into map of primitive data types.
+		Map<String, Object> parsedResponse = (Map<String, Object>) JSON.deserializeUntyped(jsonResponse);
+		// Create a new contact from the JSON response.
+		Contact cont = new Contact();
+		// Set the contact fields from the JSON response. email, phone, birthdate
+			cont.FirstName = (String) parsedResponse.get('firstName');
+			cont.LastName = (String) parsedResponse.get('lastName');
+			cont.Email = (String) parsedResponse.get('email');
+			cont.Phone = (String) parsedResponse.get('phone');
+			cont.Birthdate = Date.valueOf((String) parsedResponse.get('birthDate'));
 
-// 		// Create a new contact from the JSON response.
+		// Deserialize the address from the JSON response.
+		Map<String, Object> parsedFullAddress = (Map<String, Object>) parsedResponse.get('address');
+		// Set the address fields on the contact: MailingStreet, MailingCity, MailingPostalCode, MailingState, MailingCountry
+			cont.MailingStreet = (String) parsedFullAddress.get('address');
+			cont.MailingCity = (String) parsedFullAddress.get('city');
+			cont.MailingPostalCode = (String) parsedFullAddress.get('postalCode');
+			cont.MailingState = (String) parsedFullAddress.get('state');
+			cont.MailingCountry = (String) parsedFullAddress.get('country');
+		
+			//String DummyJsonLastUpdatedString = Datetime.now().format('yyyy-MM-dd');
+			//String DummyJsonLastUpdatedString = Date.today().format();
+		// Get the current Datetime
+	Datetime myDateTime = Datetime.now();
 
-// 		// Set the contact fields from the JSON response.
+	// Convert Datetime to String in the desired format (e.g., ISO 8601)
+	//String DummyJsonLastUpdatedString = myDateTime.format('yyyy-MM-dd\'T\'HH:mm:ss\'Z\'');
 
-// 		// Deserialize the address from the JSON response.
+	// Assign the formatted String to the text field
+	cont.DummyJSON_Last_Updated__c = myDateTime;
 
-// 		// Set the address fields on the contact.
+	Upsert cont;
 
-// 		return null;
-// 	}
+	return cont;
+	}
 
-// 	/* 
-// 	 * Question 3
-//      * Sends Contact information to an external system https://dummyjson.com/users/add ('DummyJsonUser') to create or update a user based on the provided Salesforce Contact ID.
-//      * The method prepares a JSON payload with the contact's information and sends it to the 'DummyJsonUser' add endpoint.
-//      * If the callout is successful (HTTP status code between 200 and 299), the method updates the contact's 'DummyJSON_Last_Updated__c' field in Salesforce to the current time.
-// 	 * Salesforce Contact should be used to generate the JSON payload
-// 	 * Fields: Id, FirstName, LastName, Email, Phone
-// 	 * This callout method should work in triggers
-// 	 * 
-//      * Documentation: https://dummyjson.com/docs/users
-//      * 
-//      * @param contactId The Salesforce Contact ID used to generate the JSON payload for the external system.
-//      */
+	/* 
+	 * Question 3 - current focus as of Nov 26.
+     * Sends Contact information to an external system https://dummyjson.com/users/add ('DummyJsonUser') to create or update a user based on the provided Salesforce Contact ID.
+     * The method prepares a JSON payload with the contact's information and sends it to the 'DummyJsonUser' add endpoint.
+     * If the callout is successful (HTTP status code between 200 and 299), the method updates the contact's 'DummyJSON_Last_Updated__c' field in Salesforce to the current time.
+	 * Salesforce Contact should be used to generate the JSON payload
+	 * Fields: Id, FirstName, LastName, Email, Phone
+	 * This callout method should work in triggers
+	 * 
+     * Documentation: https://dummyjson.com/docs/users
+     * 
+     * @param contactId The Salesforce Contact ID used to generate the JSON payload for the external system.
+     */
 	
-// 	public static void postCreateDummyJSONUser(String contactId) {
-// 		// Create HTTP request to send.
+	public static void postCreateDummyJSONUser(String contactId) {
+		// Create HTTP request to send. - drafted code
 
-// 		// Set the endpoint URL. Use direct URL or for best practices use Named Credential.
+		HttpRequest req = new HttpRequest();
 
-// 		// Set the HTTP method to POST.
+		// Set the endpoint URL. Use direct URL or for best practices use Named Credential. - drafted code
 
-// 		// Set the body using generateDummyJsonUserPayload method.
+		req.setEndpoint('callout:https://dummyjson.com/users' + contactId);
 
-// 		// Send the HTTP request and get the response.
+		// Set the HTTP method to POST. - drafted code
+		req.setMethod('POST');
 
-// 		// If the HTTP response code is successful, update the contact.
-// 	}
+		// Set the body using generateDummyJsonUserPayload method. - pause here because this step requires question 4 to be solved first
+			req.setBody(generateDummyJsonUserPayload(contactId));
+		// Send the HTTP request and get the response.
+		Http http = new Http();
+		HttpResponse response = http.send(req);
+		
+		// If the HTTP response code is successful, update the contact.
+		if (response.getStatusCode() == 200) {
+			Contact cont = [SELECT Id FROM Contact WHERE Id = :contactId];
+			cont.DummyJSON_Last_Updated__c = Datetime.now();
+			update cont;
+		}
+		
+	}
 
-// 	/*
-// 	 * Question 4
-//      * Generates a JSON payload based on a Salesforce Contact's fields to be sent to an external system https://dummyjson.com/users/add for user creation or update.
-//      * The method queries a contact from Salesforce based on the provided contactId and maps its fields into a JSON payload.
-//      * The fields from Salesforce Contact that are transformed into the JSON payload include Id, FirstName, LastName, Email, and Phone.
-//      * The generated JSON payload can be sent to the external system for various operations like creating or updating a user.
-// 	 * 
-// 	 * Fields from Salesforce Contact used to generate JSON payload:
-// 	 * Fields: Id => salesforceId, FirstName => firstName, LastName => lastName, Email => email, Phone => phone
-// 	 * 
-//      * Documentation: https://dummyjson.com/docs/users
-//      * 
-//      * @param String contactId The Salesforce Contact ID used to fetch the contact's fields and generate the JSON payload.
-//      * @return String The JSON string payload that represents the Contact's details.
-//      */
-// 	@TestVisible // Allows test class to see this method. Since it is private, it would not be visible otherwise.
-// 	private static String generateDummyJsonUserPayload(String contactId) {
-// 		// Query the contact to get the field values to generate the JSON payload.
+	/*
+	 * Question 4
+     * Generates a JSON payload based on a Salesforce Contact's fields to be sent to an external system https://dummyjson.com/users/add for user creation or update.
+     * The method queries a contact from Salesforce based on the provided contactId and maps its fields into a JSON payload.
+     * The fields from Salesforce Contact that are transformed into the JSON payload include Id, FirstName, LastName, Email, and Phone.
+     * The generated JSON payload can be sent to the external system for various operations like creating or updating a user.
+	 * 
+	 * Fields from Salesforce Contact used to generate JSON payload:
+	 * Fields: Id => salesforceId, FirstName => firstName, LastName => lastName, Email => email, Phone => phone
+	 * 
+     * Documentation: https://dummyjson.com/docs/users
+     * 
+     * @param String contactId The Salesforce Contact ID used to fetch the contact's fields and generate the JSON payload.
+     * @return String The JSON string payload that represents the Contact's details.
+     */
+	@TestVisible // Allows test class to see this method. Since it is private, it would not be visible otherwise.
+	private static String generateDummyJsonUserPayload(String contactId) {
+		// Query the contact to get the field values to generate the JSON payload. Step 1 is done!
+		Contact cont = [SELECT ID, FirstName, LastName, Email, Phone FROM Contact WHERE ID = :contactId]; // WHERE ID =contactId];
 
-// 		// Create a map of the field values.
+		// Create a map of the field values. Step 2 is done!
+		Map<String, Object> contactMapForJson = new Map<String, Object>();
+		contactMapForJson.put('salesforceId', cont.Id);
+		contactMapForJson.put('firstName', cont.FirstName);
+		contactMapForJson.put('lastName', cont.LastName);
+		contactMapForJson.put('email', cont.Email);
+		contactMapForJson.put('phone', cont.Phone);
 
-// 		// Serialize the map into a JSON string.
-// 		// Make sure to check that required contacts fields have a value. Default the value to unknown if it does not exists.
-// 		// Integration data can change over time. It is a best practice to add safeguards/validation to ensure the integration does not break.
+		// Serialize the map into a JSON string.
+		String jsonString = JSON.serialize(contactMapForJson);
 
-// 		return null;
-// 	}
-// }
+		// Make sure to check that required contacts fields have a value. Default the value to unknown if it does not exists.
+		if (Cont.LastName == null) {
+			cont.LastName = 'Unknown';
+			jsonString = jsonString.replace('"salesforceId":"' + cont.Id + '"', '"salesforceId":"' + cont.LastName + '"');
+		}
+		
+		// Integration data can change over time. It is a best practice to add safeguards/validation to ensure the integration does not break.
+			// I don't understand the instruction in the line above. Is this above checking the HTTP status codes?
+			
+		return jsonString;
+	}
+}

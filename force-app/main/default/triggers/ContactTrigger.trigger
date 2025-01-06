@@ -42,11 +42,15 @@ trigger ContactTrigger on Contact(before insert) {
 	// }
 
 // 	//When a contact is updated
-// 	// if DummyJSON_Id__c is greater than 100, call the postCreateDummyJSONUser API
-// 	if(Trigger.isBefore && Trigger.isUpdate){
-// 		if(contact.DummyJSON_Id__c > 100){
-// 			CalloutClass.postCreateDummyJSONUser(contact);
-// 		}
-	
-// }
+	// if DummyJSON_Id__c is greater than 100, call the postCreateDummyJSONUser API
+	if(Trigger.isBefore && Trigger.isUpdate){
+		Integer DummyJSONInteger = integer.valueof(Contact.DummyJSON_Id__c);
+		if(DummyJSONInteger > 100){
+			//CalloutClass.postCreateDummyJSONUser(contact);
+			//DummyJSONCallout.postCreateDummyJSONUser();
+		}
+	//update the DummyJSON Last Updated field with the current date and time
+	String DummyJsonLastUpdatedString = Datetime.now().format('yyyy-MM-dd');
+		Contact.DummyJSON_Last_Updated__c = DummyJsonLastUpdatedString;
+	}
 }
